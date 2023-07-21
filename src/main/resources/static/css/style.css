@@ -1,0 +1,65 @@
+@font-face {
+    font-family: 'LINESeedKR-Bd';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+    font-weight: 100;
+    font-style: normal;
+}
+
+body, select{
+    font-family: 'LINESeedKR-Bd';
+}
+
+table {
+    width: 1100px;
+    border-top: 1px solid #d0d0d0;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th, td {
+    border-bottom: 1px solid #d0d0d0;
+    border-left: 1px solid #d0d0d0;
+    padding: 9px;
+}
+
+th{
+    background-color: #eaeaea;
+}
+
+td{
+    text-align: center;
+}
+
+th:first-child, td:first-child {
+    border-left: none;
+}
+
+form {
+    border: 1px solid #a7a7a7;
+    padding: 17px;
+    width: 1060px;
+    height: 50px;
+    font-size: 13px;
+    padding-left: 20px;
+}
+
+form label {
+    margin-right: 20px; /* 오른쪽 여백 추가 */
+}
+
+form input {
+    margin-left: 30px;
+}
+
+.evl_btn {
+    background-color: #4749d3;
+    border: #4749d3;
+    width: auto;
+    color: #ffffff;
+    padding: 10px;
+}
+
+#map {
+    width: 100%;
+    height: 1000px; /* 적절한 높이 설정 */
+}
