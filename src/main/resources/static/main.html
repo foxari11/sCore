@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <title>평가등급 관리</title>
+</head>
+<body>
+
+<br><h2>&nbsp;평가등급</h2>
+
+<form>
+    <div class="form-group">
+        <label for="customer-number">고객번호</label>
+        <input type="text" id="customer-number" >
+        <input type="button" class="evl_btn" value=".">
+        <input type="text" id="customer-name" >
+        <label id="evaluation">평가등급구분</label>
+        <select>
+            <option value="option1" selected>전체</option>
+            <option value="option2">기본평가등급</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="reference-year">기준년도</label>
+        <input type="text" id="reference-year" >
+        <label id="calculation">계산구분</label>
+        <select>
+            <option value="option1" selected>전체</option>
+            <option value="option2">동일</option>
+            <option value="option3">이상</option>
+            <option value="option3">미만</option>
+        </select>
+        <label for="evaluation-name">평가등급명</label>
+        <input type="text" id="evaluation-name" >
+        <input type="button" class="evl_btn" value="검색">
+    </div>
+</form>
+<br><br><br>
+
+<div>
+    <input type="button" class="evl_btn" value="신규등록">
+</div>
+<table>
+    <tr>
+        <th>선택</th>
+        <th>고객번호</th>
+        <th>고객명</th>
+        <th>평가등급구분</th>
+        <th>평가등급코드</th>
+        <th>평가등급명</th>
+        <th>평가등급설명</th>
+        <th>기준값</th>
+        <th>계산구분</th>
+        <th>계산순서</th>
+    </tr>
+    <th:block th:each="evo : ${getEvoList}">
+        <tr>
+            <td><input type="radio"></td>
+            <td th:text="${evo.evlform_id}"></td>
+            <td th:text="${evo.evlform_nm}"></td>
+            <td th:text="${evo.mlsfc_nm_yn}"></td>x`
+            <td th:text="${evo.sclas_nm_yn}"></td>
+            <td th:text="${evo.evlform_cn}"></td>
+            <td th:text="${evo.evl_stdr}"></td>
+            <td th:text="${evo.evlform_knd_code}"></td>
+            <td th:text="${evo.menu_no}"></td>
+            <td th:text="${evo.end_yn}"></td>
+        </tr>
+    </th:block>
+</table>
+
+<div>
+    <input type="button" class="evl_btn" value="평가등급 삭제">
+    <input type="button" class="evl_btn" value="직전년도 복사">
+    <input type="button" class="evl_btn" value="관리이력조회">
+</div>
+</body>
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center" th:with="start=${pageVO.firstPageNo},last=${pageVO.lastPageNo}">
+        <li th:if="${pageVO.hasPrevPageNav == true}">
+            <a class="page-link" th:href="@{/main.html(pageNo=1)}" aria-label="First">
+                <span aria-hidden="true">FIRST</span>
+            </a>
+        </li>
+        <li th:if="${pageVO.hasPrevPageNav == true}">
+            <a class="page-link" th:href="@{/main.html(pageNo=${pageVO.firstPageNo - pageVO.pageNavSize})}" aria-label="Previous">
+                <span aria-hidden="true">이전</span>
+            </a>
+        </li>
+        <a th:each="i: ${#numbers.sequence(start,last)}">
+            <li class="page-item" th:unless="${i} == ${pageVO.pageNo}">
+                <a th:href="@{/main.html(pageNo=${i})}" class="page-link" th:text="${i}"></a>
+            </li>
+            <li class="page-item active" th:if="${i} == ${pageVO.pageNo}">
+                <a th:href="@{/main.html(pageNo=${i})}" class="page-link" th:text="${i}"></a>
+            </li>
+        </a>
+        <li th:if="${pageVO.hasNextPageNav == true}">
+            <a class="page-link" href="@{/main.html(pageNo=${pageVO.firstPageNo + pageVO.pageNavSize})}" aria-label="Next">
+                <span aria-hidden="true">다음</span>
+            </a>
+        </li>
+        <li th:if="${pageVO.hasNextPageNav == true}">
+            <a class="page-link" th:href="@{/main.html(pageNo=${pageVO.totalPage})}" aria-label="Last">
+                <span aria-hidden="true">END</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+</html>
