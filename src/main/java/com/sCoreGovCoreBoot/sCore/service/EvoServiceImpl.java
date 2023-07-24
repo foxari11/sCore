@@ -25,4 +25,18 @@ public class EvoServiceImpl implements EvoService {
         return evoDao.insertEvo(vo);
     }
 
+    public int deleteEvo(String id) {
+        return evoDao.deleteEvo( id);
+    }
+
+    @Override
+    public int searchEvoCount(String evaluationName) {
+        return evoDao.searchEvoCount(evaluationName);
+    }
+
+    @Override
+    public List<EvoVO> getEvoListByKeyword(String evaluationName, PaginationVO pageVO) {
+        return evoDao.getEvoListByKeyword(evaluationName, pageVO);
+    }
+
 }

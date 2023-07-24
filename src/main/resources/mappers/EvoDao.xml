@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sCoreGovCoreBoot.sCore.dao.EvoDao">
-
+    <!-- Pagination -->
     <select id="getEvoList" parameterType="PaginationVO" resultType="EvoVO">
         SELECT * FROM evlform_master
         ORDER BY evlform_id
@@ -12,6 +12,43 @@
     <select id="evoCount" resultType="int">
         SELECT COUNT(*) FROM evlform_master
     </select>
-    
+
+    <!-- 평가 등급 정보 등록 -->
+    <insert id="insertEvo" parameterType="EvoVO">
+        INSERT INTO evlform_master (
+        evlform_id,
+        evlform_nm,
+        mlsfc_nm_yn,
+        sclas_nm_yn,
+        evlform_cn
+        ) VALUES (
+        CAST(RAND() * 1000 AS UNSIGNED),  -- 0 이상 1000 미만의 랜덤한 정수 값
+        #{evlform_nm},
+        #{mlsfc_nm_yn},
+        #{sclas_nm_yn},
+        #{evlform_cn}
+        )
+    </insert>
+
+    <!-- 평가 등급 정보 삭제 -->
+    <delete id="deleteEvo" parameterType="String">
+        DELETE FROM evlform_master
+        WHERE evlform_id = #{evlform_id}
+    </delete>
+
+    <!-- 평가 등급 정보 조회 리스트-->
+    <select id="getEvoListByKeyword" parameterType="PaginationVO" resultType="EvoVO">
+        SELECT * FROM evlform_master
+        WHERE evlform_cn LIKE CONCAT(#{evaluationName}, '%')
+        ORDER BY evlform_id
+        LIMIT #{pageVO.pageSize} OFFSET #{pageVO.startRow}
+    </select>
+
+    <!-- 평가 등급 정보 조회 개수 -->
+    <select id="searchEvoCount" parameterType="String" resultType="int">
+        SELECT COUNT(*) FROM evlform_master
+        WHERE evlform_nm LIKE CONCAT('%', #{evaluationName}, '%')
+    </select>
+
 
 </mapper>

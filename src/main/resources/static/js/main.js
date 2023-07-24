@@ -1,138 +1,393 @@
-window.onload = init;
+function Start_mapMeasurement(MesaType){
+    MeasNowType = MesaType
+    MeasLayerSouce = new ol.source.Vector();
+    MeasLayerSouce.on('addfeature', function(evt){
+        var feature = evt.feature;
+        var coords = feature.getGeometry().getCoordinates();
+        var coord = coords;
+        if(MesaType == "Polygon"){
+            coord = coords[0];
+        }
 
-let map; // map 변수를 전역으로 선언
-
-
-function init() {
-
-    EMapCreat("D:/eMap/tiles/")
-
-}
-
-function zoom(zno) {
-    map.getView().setZoom(zno);
-    console.log(zno + " 으로 줌 변경");
-}
-
-function Rotations(angle){map.getView().setRotation(angle);console.log(angle+"도로 각도 변경");}/* 지도 회전 */
-
-
-function CodebyTime(){
-    var t = new Date();
-    return t.getFullYear()+"-"+(Number(t.getMonth())+1)+"-"+t.getDate()+" "+t.getHours()+":"+t.getMinutes()+":"+t.getSeconds();
-} /* 현재시간 호출용 */
-
-function PopUpViewLayer(){
-    //document.getElementById('popup_list').innerHTML = "";
-    for (var i = 0; i < PopupLayer.length; i++) {
-        map.removeOverlay(PopupLayer[i]);
-    }
-    PopupLayer = [];
-
-    var cnt = popup_lon_arr.length;
-
-    for(i=0;i<cnt;i++){
-        var popup_html = "<div id='popup"+i+"' class='ol-popup' style='z-index:9999999'>"
-            +"<input type='hidden' value='"+i+"' id='"+popup_id_arr[i]+"'>"
-            +"<a href='#' id='popup-closer"+i+"' class='ol-popup-closer' onclick='closePopup(this,"+i+");'></a>"
-            +"<div id='popup-content"+i+"'></div>"
-            +"</div>"
-        ;
-        document.getElementById('popup_list').innerHTML = popup_html;
-
-        container = document.getElementById('popup'+i); /* openlayers3 지원 팝업컨트롤 변수 */
-        content = document.getElementById('popup-content'+i); /* openlayers3 지원 팝업컨트롤 변수 */
-        closer = document.getElementById('popup-closer'+i); /* openlayers3 지원 팝업컨트롤 변수 */
-
-        content.className = "popup-content";
-        content.innerHTML = popup_html_arr[i];
-
-        var coordinate = ol.proj.transform([Number(popup_lon_arr[i]),Number(popup_lat_arr[i])], 'EPSG:4326', 'EPSG:5179');
-
-        PopupLayer[i] = new ol.Overlay(/** @type {olx.OverlayOptions} */ ({ /* 팝업(말풍선) 레이어 생성 */
-            element: container
-            ,autoPan: true
-            ,autoPanAnimation: {
-                duration: 0 /* api지도들은 바로 이동하므로 0으로 해야 떨어져 나가는 느낌이 안생김 */
-            }
-            ,position: coordinate
-            //,positioning: 'center-center'
-        }));
-        map.addOverlay(PopupLayer[i]);
-
-    }
-    if(popup_id_arr.length > 0){
-        tooltipChk = 1;
-    }else{
-        tooltipChk = 0;
-    }
-}
-
-function EMapCreat(tiles){/*OSM 생성 : 맵생성 옵션은 OSM 홈페이지 참조 */
-    var extent	= [-200000.0, -28024123.62 , 31824123.62, 4000000.0];
-    var resolutions = [
-        1954.597389
-        , 977.2986945
-        , 488.64934725
-        , 244.324673625
-        , 122.1623368125
-        , 61.08116840625
-        , 30.540584203125
-        , 15.2702921015625
-        ,7.63514605078125
-        ,3.817573025390625
-        ,1.9087865126953125
-        ,0.9543932563476563
-        ,0.47719662817382813
-        ,0.23859831408691406];
-
-    /* OSM은 API자체는 지원하지 않기 때문에 ol3을 한개 더만들어 지도를 생성한다 */
-    localTileGrid =  new ol.tilegrid.TileGrid({
-        extent: extent,
-        resolutions: resolutions
+        var lonlat;
+        for(var i=0;i<coord.length;i++){
+            lonlat = coord[i];
+            lonlat = ol.proj.transform(lonlat, 'EPSG:5179', 'EPSG:4326');
+            MeasNowlon[i] = lonlat[0];
+            MeasNowlat[i] = lonlat[1];
+        }
+        MeasureMentOut(MeasNowlon,MeasNowlat,MeasNowDist,MeasNowType);
     });
 
-    LocalView = new ol.View({
-        projection: projection,
-        extent: extent,
-        maxResolution: 1954.597389,
-        maxZoom: 13,
-        center :[960363.60652286,1920034.9139856],
-        zoom : 3
-    });
-
-    LocalSource = new ol.layer.Tile({
-        title : 'eMap',
-        visible : true,
-        type : 'base',
-        source : new ol.source.XYZ({
-            projection: projection,
-            tileSize: 256,
-            //minZoom: 6,
-            maxZoom: 13,
-            tileGrid:localTileGrid,
-            tileUrlFunction: function (tileCoord, pixelRatio, projection) {
-                if (tileCoord == null) return undefined;
-                var tileExtent = localTileGrid.getTileCoordExtent(tileCoord);
-                var DLs = ol.extent.getBottomLeft(tileExtent);
-                //var MapDLs = ol.extent.getBottomLeft(projection.c);
-                var MapDLs = ol.extent.getBottomLeft(projection.i);
-                var z = tileCoord[0]+6;
-                var gRes = LocalView.getResolution();
-                var x = Math.round((DLs[0] - MapDLs[0]) / (gRes * 256));
-                var y = Math.round((DLs[1] - MapDLs[1]) / (gRes * 256));
-                //console.log(z + '/' + x + '/' + y);
-                //return '/map/e-map/' + z + '/' + x + '/' + y + '.png';
-                return tiles + z + '/' + x + '/' + y + '.png';
-            }
+    MeasureLine = new ol.layer.Vector({
+        source: MeasLayerSouce,
+        style: new ol.style.Style({
+            fill: new ol.style.Fill({
+                color: 'rgba(255, 255, 255, 0.2)'
+            }),
+            stroke: new ol.style.Stroke({
+                color: '#ffcc33',
+                width: 2
+            }),
+            image: new ol.style.Circle({
+                radius: 7,
+                fill: new ol.style.Fill({
+                    color: '#ffcc33'
+                })
+            })
         })
     });
 
-    LocalLayer = new ol.layer.Group({name:"LocalLayer_e",layers:[LocalSource]}); /* 베이스 레이어생성 옵션 필요없음 */
-    Emap = new ol.Map({ /* 베이스맵 생성 */
-        layers : [LocalLayer] /* 오브젝트 레이어 */
-        ,target : EMDiv /* 사용할 div */
-        ,view: LocalView /* 지도 매칭용 뷰 */
+    map.addLayer(MeasureLine);
+
+    draw = new ol.interaction.Draw({
+        source: MeasLayerSouce,
+        type:MesaType,
+        style: new ol.style.Style({
+            fill: new ol.style.Fill({
+                color: 'rgba(255, 255, 255, 0.2)'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'rgba(0, 0, 0, 0.5)',
+                lineDash: [10, 10],
+                width: 2
+            }),
+            image: new ol.style.Circle({
+                radius: 5,
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(0, 0, 0, 0.7)'
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(255, 255, 255, 0.2)'
+                })
+            })
+        })
     });
-    //console.log("ID "+OMDiv+"의 div를 OSM 생성.");
+    map.addInteraction(draw);
+    createMeasureTooltip();
+    createHelpTooltip();
+
+    draw.on('drawstart',
+        function(evt) {
+            if(MeasNowType != "Point"){
+                MeasLayerSouce.clear(true);
+            }
+
+            sketch = evt.feature;
+            var tooltipCoord = evt.coordinate;
+            listener = sketch.getGeometry().on('change', function(evt) {
+                var geom = evt.target;
+                var output;
+                if (geom instanceof ol.geom.Polygon) {
+                    output = formatArea(geom);
+                    tooltipCoord = geom.getInteriorPoint().getCoordinates();
+                    MeasNowDist = output;
+                    measureTooltipElement.innerHTML = output;
+                    measureTooltip.setPosition(tooltipCoord);
+                } else if (geom instanceof ol.geom.LineString) {
+                    output = formatLength(geom);
+                    tooltipCoord = geom.getLastCoordinate();
+                    MeasNowDist = output;
+                    measureTooltipElement.innerHTML = output;
+                    measureTooltip.setPosition(tooltipCoord);
+                }
+            });
+        }
+        , this);
+    draw.on('drawend',
+        function() {
+            measureTooltipElement.className = 'tooltip tooltip-static';
+            measureTooltip.setOffset([0, -7]);
+            ol.Observable.unByKey(listener);
+        }
+        , this);
 }
+
+function createMeasureTooltip() {
+    if (measureTooltipElement) {
+        measureTooltipElement.parentNode.removeChild(measureTooltipElement);
+    }
+    measureTooltipElement = document.createElement('div');
+    measureTooltipElement.className = 'tooltip tooltip-measure';
+    measureTooltip = new ol.Overlay({
+        element: measureTooltipElement,
+        offset: [0, -15],
+        positioning: 'bottom-center'
+    });
+    map.addOverlay(measureTooltip);
+}
+
+function createHelpTooltip() {
+    if (helpTooltipElement) {
+        helpTooltipElement.parentNode.removeChild(helpTooltipElement);
+    }
+    helpTooltipElement = document.createElement('div');
+    helpTooltipElement.className = 'tooltip hidden';
+    helpTooltip = new ol.Overlay({
+        element: helpTooltipElement,
+        offset: [15, 0],
+        positioning: 'center-left'
+    });
+    map.addOverlay(helpTooltip);
+}
+
+function End_mapMeasurement(){
+    map.getInteractions().forEach(function (interaction) {
+        if(interaction == draw) {
+            map.removeInteraction(draw);
+        }
+    });
+    map.getOverlays().forEach(function (interaction) {
+        if(interaction == measureTooltip) {
+            map.removeOverlay(measureTooltip);
+        }
+    });
+    map.getLayers().forEach(function (interaction) {
+        if(interaction == MeasureLine) {
+            map.removeLayer(MeasureLine);
+        }
+    });
+}
+
+function DrawLine(){
+    pointToggle.value = "line";
+    End_mapMeasurement();
+    Start_mapMeasurement("LineString");
+}
+
+function DrawPolygon(){
+    pointToggle.value = "polygon";
+    End_mapMeasurement();
+    Start_mapMeasurement("Polygon");
+}
+
+function LineDistanceCalc(){
+    pointToggle.value = "line_c";
+    End_mapMeasurement();
+    Start_mapMeasurement("LineString");
+}
+
+function AreaSizeCalc(){
+    pointToggle.value = "polygon_c";
+    End_mapMeasurement();
+    Start_mapMeasurement("Polygon");
+}
+
+function MapMove(){
+    pointToggle.value = "move";
+    End_mapMeasurement();
+}
+
+function DrawPoint(){
+    alert(" DrawPoint ");
+    pointToggle.value = "point";
+    End_mapMeasurement();
+    Start_mapMeasurement("Point");
+}
+
+// 두 점 사이의 거리 계산 함수
+function calculateDistance(point1, point2) {
+    var lon1 = point1[0];
+    var lat1 = point1[1];
+    var lon2 = point2[0];
+    var lat2 = point2[1];
+
+    var R = 6371; // 지구 반지름 (단위: km)
+    var dLat = deg2rad(lat2 - lat1);
+    var dLon = deg2rad(lon2 - lon1);
+    var a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var distance = R * c;
+
+    return distance;
+}
+
+
+// 각도를 라디안으로 변환하는 함수
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
+
+// 지도 생성
+var map = new ol.Map({
+    target: 'map',
+    layers: [
+        new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: 'https://xdworld.vworld.kr/2d/midnight/service/{z}/{x}/{y}.png'
+            })
+        })
+    ],
+    view: new ol.View({
+        center: ol.proj.fromLonLat([126.978275264, 37.566642192]),
+        zoom: 7
+    })
+});
+
+var geojsonObject = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [126.978275264, 37.566642192],
+                        [127.000000000, 37.500000000],
+                        [127.100000000, 37.550000000],
+                        [126.978275264, 37.566642192]
+                    ]
+                ]
+            },
+            "properties": {
+                // Add properties of the first feature here
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [127.100000000, 37.550000000],
+                        [127.150000000, 37.600000000],
+                        [127.200000000, 37.580000000],
+                        [127.100000000, 37.550000000]
+                    ]
+                ]
+            },
+            "properties": {
+                // Add properties of the second feature here
+            }
+        }
+    ]
+};
+
+var vectorSource = new ol.source.Vector({
+    features: new ol.format.GeoJSON().readFeatures(geojsonObject),
+    wrapX: false
+});
+
+var vectorLayer = new ol.layer.Vector({
+    style: new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: 'rgba(0, 0, 0)',
+            width: 2
+        }),
+        fill: new ol.style.Fill({
+            color: 'rgba(255, 0, 0, 0.2)'
+        })
+    }),
+    source: vectorSource,
+    name: 'area'
+});
+
+// 행정구역 레이어 추가
+map.addLayer(vectorLayer);
+
+// 각 행정구역 마우스 오버시 하이라이팅
+// 마우스 오버시 스타일 지정
+var selectPointerMove = new ol.interaction.Select({
+    condition: ol.events.condition.pointerMove,
+    style: new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: 'white',
+            width: 2
+        }),
+        fill: new ol.style.Fill({
+            color: 'rgba(0, 0, 255, 0.6)'
+        })
+    })
+});
+
+// interaction 추가
+map.addInteraction(selectPointerMove);
+
+// 마우스 오버 이벤트 처리
+map.on('pointermove', function (e) {
+    if (e.dragging) return;
+    var coordinate = e.coordinate;
+    console.log('마우스 좌표:', ol.proj.toLonLat(coordinate));
+});
+
+// 변수 초기화
+var clickedPoints = [];
+
+// 마우스 클릭 이벤트 처리 (점 찍기)
+// 마우스 클릭 이벤트 처리 (점 찍기)
+map.on('click', function (e) {
+    var coordinate = e.coordinate;
+    console.log('클릭 좌표:', ol.proj.toLonLat(coordinate));
+
+
+
+    // 클릭한 위치에 점 표시
+    var markerFeature = new ol.Feature({
+        geometry: new ol.geom.Point(coordinate)
+    });
+    var markerSource = new ol.source.Vector({
+        features: [markerFeature],
+        wrapX: false
+    });
+    blueMarkerLayer = new ol.layer.Vector({
+        source: markerSource,
+        style: new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({
+                    color: 'blue'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: 'white',
+                    width: 2
+                })
+            })
+        })
+    });
+    map.addLayer(blueMarkerLayer);
+
+    // 클릭한 점들을 배열에 추가
+    clickedPoints.push(coordinate);
+
+    // 두 점이 모두 클릭되면 거리를 계산하여 출력
+    if (clickedPoints.length === 2) {
+        var point1 = ol.proj.toLonLat(clickedPoints[0]);
+        var point2 = ol.proj.toLonLat(clickedPoints[1]);
+
+        var distance = calculateDistance(point1, point2);
+        console.log('두 점 사이의 거리:', distance.toFixed(2), 'km');
+
+        // 클릭한 점 배열 초기화
+        clickedPoints = [];
+
+    }
+});
+
+// 파란색 점 레이어를 저장할 전역 변수
+var blueMarkerLayer;
+
+function Rotations(angle){map.getView().setRotation(angle);console.log(angle+"도로 각도 변경");}/* 지도 회전 */
+
+function Zoom(zno){map.getView().setZoom(zno);/*console.log(zno+" 으로 줌 변경");*/} /* 준변경 */
+
+function CodebyTime(){var t = new Date();return t.getFullYear()+"-"+(Number(t.getMonth())+1)+"-"+t.getDate()+" "+t.getHours()+":"+t.getMinutes()+":"+t.getSeconds();} /* 현재시간 호출용 */
+
+// 파란색 점 레이어를 삭제하는 함수
+// 파란색 점 레이어를 모두 삭제하는 함수
+
+// 파란색 점 레이어를 삭제하는 함수
+function RemoveAllBlueMarkers() {
+    if (blueMarkerLayer) {
+        map.removeLayer(blueMarkerLayer);
+        blueMarkerLayer = null;
+    }
+}
+
+function SetCenter(lon,lat){
+    map.getView().setCenter(_4326ToMapProj(lon,lat,'EPSG:5179'));/*console.log(lon+" , "+lat+" 으로 좌표이동");*/
+}
+
