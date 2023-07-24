@@ -1,3 +1,16 @@
+// map 객체에 대해 LayerInfo 함수 호출
+const mapLayerInfo = LayerInfo("LayerName", map);
+
+// Smallmap 객체에 대해 LayerInfo 함수 호출
+const smallMapLayerInfo = LayerInfo("LayerName", Smallmap);
+
+// map 객체에 대해 LayerNoCall 함수 호출
+const mapLayerNumber = LayerNoCall("LayerName", map);
+
+// Smallmap 객체에 대해 LayerNoCall 함수 호출
+const smallMapLayerNumber = LayerNoCall("LayerName", Smallmap);
+
+
 function Start_mapMeasurement(MesaType){
     MeasNowType = MesaType
     MeasLayerSouce = new ol.source.Vector();
@@ -323,8 +336,6 @@ map.on('click', function (e) {
     var coordinate = e.coordinate;
     console.log('클릭 좌표:', ol.proj.toLonLat(coordinate));
 
-
-
     // 클릭한 위치에 점 표시
     var markerFeature = new ol.Feature({
         geometry: new ol.geom.Point(coordinate)
@@ -390,4 +401,104 @@ function RemoveAllBlueMarkers() {
 function SetCenter(lon,lat){
     map.getView().setCenter(_4326ToMapProj(lon,lat,'EPSG:5179'));/*console.log(lon+" , "+lat+" 으로 좌표이동");*/
 }
+
+function LayerInfo(ChkName, mapObject) {
+    var vectorLayer = mapObject.getLayers().getArray();
+    var lycnt = vectorLayer.length - 1;
+    var i;
+    var result = {
+        chk: true,
+        cnt: lycnt
+    };
+    for (i = 0; i < vectorLayer.length; i++) {
+        if (vectorLayer[i].get('name') == ChkName) {
+            result.chk = false;
+            break;
+        }
+    }
+    return result;
+}
+
+function LayerNoCall(ChkName, mapObject) {
+    var vectorLayer = mapObject.getLayers().getArray();
+    var i;
+    var lyno = -1;
+    for (i = 0; i < vectorLayer.length; i++) {
+        if (vectorLayer[i].get('name').trim() == ChkName.trim()) {
+            lyno = i - 1;
+            break;
+        }
+    }
+    return lyno;
+}
+
+
+function formatLength(line) {
+    var length;
+    var coordinates = line.getCoordinates();
+    length = 0;
+    var sourceProj = map.getView().getProjection();
+    for (var i = 0, ii = coordinates.length - 1; i < ii; ++i) {
+        var c1 = ol.proj.transform(coordinates[i], sourceProj, 'EPSG:4326');
+        var c2 = ol.proj.transform(coordinates[i + 1], sourceProj, 'EPSG:4326');
+        length += wgs84Sphere.haversineDistance(c1, c2);
+    }
+    var output;
+    if (length > 100) {
+        output = (Math.round(length / 1000 * 100) / 100) +' ' + 'km';
+    } else {
+        output = (Math.round(length * 100) / 100) +' ' + 'm';
+    }
+    return output;
+};
+
+
+function formatArea(polygon) {
+    var area;
+    var sourceProj = map.getView().getProjection();
+    var geom = (polygon.clone().transform(sourceProj, 'EPSG:4326'));
+    var coordinates = geom.getLinearRing(0).getCoordinates();
+    area = Math.abs(wgs84Sphere.geodesicArea(coordinates));
+    var output;
+    if (area > 10000) {
+        output = (Math.round(area / 1000000 * 100) / 100) +' ' + 'km<sup>2</sup>';
+    } else {
+        output = (Math.round(area * 100) / 100) +' ' + 'm<sup>2</sup>';
+    }
+    return output;
+};
+
+function showElement(LyName){
+    var lyno = LayerNoCall(LyName);
+    if(lyno > -1){
+        FeaturesSource[27].ab.change[0].Ch.N.visible = true
+        FeaturesSource[27].refresh();
+    }
+}
+
+// 레이어 삭제
+function removeElement(LyName){
+    var lyno = LayerNoCall(LyName);
+    if(lyno > -1){
+        FeaturesSource[lyno].clear(true); /*기존 Features 삭제*/
+    }
+    if(LyName == "ALL"){
+        var i;
+        for(i=0;i<FeaturesSource.length;i++){
+            FeaturesSource[i].clear(true)
+        }
+    }
+
+    lyno = SmallLayerNoCall(LyName);
+    if(lyno > -1){
+        SmallFeaturesSource[lyno].clear(true); /*기존 Features 삭제*/
+    }
+    if(LyName == "ALL"){
+        var i;
+        for(i=0;i<SmallFeaturesSource.length;i++){
+            SmallFeaturesSource[i].clear(true)
+        }
+    }
+}
+
 
