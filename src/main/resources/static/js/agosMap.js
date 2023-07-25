@@ -1,0 +1,1 @@
+import * as agos from "/js/3try.js";

@@ -1,15 +1,3 @@
-// map 객체에 대해 LayerInfo 함수 호출
-const mapLayerInfo = LayerInfo("LayerName", map);
-
-// Smallmap 객체에 대해 LayerInfo 함수 호출
-const smallMapLayerInfo = LayerInfo("LayerName", Smallmap);
-
-// map 객체에 대해 LayerNoCall 함수 호출
-const mapLayerNumber = LayerNoCall("LayerName", map);
-
-// Smallmap 객체에 대해 LayerNoCall 함수 호출
-const smallMapLayerNumber = LayerNoCall("LayerName", Smallmap);
-
 
 function Start_mapMeasurement(MesaType){
     MeasNowType = MesaType
@@ -31,6 +19,28 @@ function Start_mapMeasurement(MesaType){
         }
         MeasureMentOut(MeasNowlon,MeasNowlat,MeasNowDist,MeasNowType);
     });
+
+    function MeasureMentOut(lon,lat,output,MesaType){
+        var out = "";
+        var PointChk = true;
+        if(MesaType == "LineString") {
+            out += ",,pointdist," + output;
+        } else if(MesaType == "Polygon") {
+            out += ",,areaSize," + output;
+        } else if(MesaType == "Point") {
+            PointChk = false;
+        }
+
+        if(PointChk){
+            var lons="";
+            var lats="";
+            for(var i=0;i<lon.length;i++){
+                lons += lon[i]+'@';
+                lats += lat[i]+'@';
+            }
+            console.log(",,pointdist," +lons+"-"+lats);
+        }
+    }
 
     MeasureLine = new ol.layer.Vector({
         source: MeasLayerSouce,
@@ -174,6 +184,14 @@ function DrawPolygon(){
     Start_mapMeasurement("Polygon");
 }
 
+function DrawPoint(){
+    alert(" DrawPoint ");
+    pointToggle.value = "point";
+    End_mapMeasurement();
+    Start_mapMeasurement("Point");
+}
+
+
 function LineDistanceCalc(){
     pointToggle.value = "line_c";
     End_mapMeasurement();
@@ -191,12 +209,6 @@ function MapMove(){
     End_mapMeasurement();
 }
 
-function DrawPoint(){
-    alert(" DrawPoint ");
-    pointToggle.value = "point";
-    End_mapMeasurement();
-    Start_mapMeasurement("Point");
-}
 
 // 두 점 사이의 거리 계산 함수
 function calculateDistance(point1, point2) {
@@ -433,6 +445,7 @@ function LayerNoCall(ChkName, mapObject) {
 }
 
 
+/*
 function formatLength(line) {
     var length;
     var coordinates = line.getCoordinates();
@@ -441,6 +454,9 @@ function formatLength(line) {
     for (var i = 0, ii = coordinates.length - 1; i < ii; ++i) {
         var c1 = ol.proj.transform(coordinates[i], sourceProj, 'EPSG:4326');
         var c2 = ol.proj.transform(coordinates[i + 1], sourceProj, 'EPSG:4326');
+        console.log("이게먼데" + c1);
+        console.log("야이거봐" + c2);
+
         length += wgs84Sphere.haversineDistance(c1, c2);
     }
     var output;
@@ -448,6 +464,18 @@ function formatLength(line) {
         output = (Math.round(length / 1000 * 100) / 100) +' ' + 'km';
     } else {
         output = (Math.round(length * 100) / 100) +' ' + 'm';
+    }
+    return output;
+};
+*/
+
+function formatLength(line) {
+    var length = ol.sphere.getLength(line);
+    var output;
+    if (length > 100) {
+        output = Math.round((length / 1000) * 100) / 100 + ' ' + 'km';
+    } else {
+        output = Math.round(length * 100) / 100 + ' ' + 'm';
     }
     return output;
 };

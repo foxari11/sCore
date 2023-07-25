@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" th:href="@{/css/style.css}">
   <link rel="stylesheet" th:href="@{/css/ol.css}">
-  <title>평가등급 관리</title>
+  <title>왜안돼</title>
 </head>
 
 <body>
@@ -15,24 +15,24 @@
 
 <script th:src="@{/js/ol/dist/ol.js}"></script>
 <script th:src="@{/js/proj4.js}"></script>
-<script th:src="@{/js/main.js}"></script>
+
+<!--<script th:src="@{/js/ol/geom}"></script>-->
+<script th:src="@{/js/msmsAgos.js}"></script>
 
 
 
+<button onclick="zoomToLevel(2)">Zoom 2</button>
+<button onclick="zoomToLevel(10)">Zoom 10</button>
+<button onclick="zoomToLevel(18)">Zoom 18</button>
+<button onclick="rotate(180)">각도 변경</button>
+<button onclick="rotate(0)">각도 초기화</button>
+<button onclick="console.log(util.codeByTime())">현재 시간 출력</button>
 
-<button onclick="Zoom(2)">Zoom 2</button>
-<button onclick="Zoom(10)">Zoom 10</button>
-<button onclick="Zoom(18)">Zoom 18</button>
-<button onclick="Rotations(180)">각도변경</button>
-<button onclick="Rotations(0)">각도변경</button>
-<button onclick="CodebyTime(0)">시간아</button>
-
-
-<button onclick="End_mapMeasurement()">그리기 멈춰~ </button>
-<button onclick="Start_mapMeasurement('Polygon')">그리기모드 다각형</button>
-<button onclick="Start_mapMeasurement('LineString')">그리기모드 라인</button>
-<button onclick="RemoveAllBlueMarkers()">점 하나 지우기</button>
-<button onclick="SetCenter(130.3,36)">센터로와바</button>
+<button onclick="endMe();"> 멈춰~</button>
+<button onclick="drawPolygon()">그리기 모드 다각형</button>
+<button onclick="drawLineString()">그리기 모드 라인</button>
+<button onclick="removeAllMarkers()">점 하나 지우기</button>
+<button onclick="moveToCenter()">센터로 이동</button>
 
 
 

@@ -35,6 +35,17 @@ public class EvoController {
         return "newAgosMap.html";
     }
 
+    @GetMapping(value = "/newAgosMap2")
+    public String mapView2() {
+
+        return "newAgosMap2.html";
+    }
+    @GetMapping(value = "/newAgosMap3")
+    public String mapView3() {
+
+        return "newAgosMap3.html";
+    }
+
     /********************************
      * 함수명 : insertQuestion
      * 역할   : 평가 등급 정보 등록
