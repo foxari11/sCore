@@ -1,8 +1,4 @@
-import VectorTileLayer from 'ol/layer/VectorTile.js';
-import VectorTileSource from 'ol/source/VectorTile.js';
-import {Map, View} from 'ol/index.js';
-import {applyBackground, applyStyle} from 'ol-mapbox-style';
-import {createXYZ} from 'ol/tilegrid.js';
+
 
 const url = 'http://xdworld.vworld.kr:8080/2d/Base/201802/{z}/{x}/{y}.png';
 

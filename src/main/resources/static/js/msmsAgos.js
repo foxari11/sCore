@@ -4,7 +4,6 @@ measureTooltipElement = null;//draw 이벤트가 진행 중일 때 담을 거리
 
 class MapManager {
 
-
     constructor() {
         this.measureTooltip = null; // 측정 툴팁을 위한 변수 추가
         this.MeasureLine = null; // 측정 라인을 위한 변수 추가
