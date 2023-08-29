@@ -4,30 +4,55 @@ measureTooltipElement = null;//draw 이벤트가 진행 중일 때 담을 거리
 
 class MapManager {
 
-    constructor() {
-        this.measureTooltip = null; // 측정 툴팁을 위한 변수 추가
-        this.MeasureLine = null; // 측정 라인을 위한 변수 추가
-        this.draw = null;
-
+    constructor(targetElementId) {
+        this.targetElement = document.getElementById(targetElementId);
         this.map = new ol.Map({
-            target: 'map',
+            target: this.targetElement,
             layers: [
                 new ol.layer.Tile({
-                    source: new ol.source.XYZ({
-                        url: 'https://xdworld.vworld.kr/2d/midnight/service/{z}/{x}/{y}.png'
+                    source: new ol.source.OSM({
+                        //url: 'https://xdworld.vworld.kr/2d/midnight/service/{z}/{x}/{y}.png'
                     })
                 })
             ],
-            view: new ol.View({
+                view: new ol.View({
                 center: ol.proj.fromLonLat([126.978275264, 37.566642192]),
                 zoom: 7
-            })
+                })
+                });
+
+
+        // 커스텀 요소를 추가할 Overlay 생성
+        this.customOverlayElement  = document.getElementById('customElement');
+        this.customOverlay = new ol.Overlay({
+            element: this.customOverlayElement ,
+            position: ol.proj.fromLonLat([126.978275264, 37.566642192]),
+            positioning: 'top-left' // 요소의 중심을 화면의 중심에 맞춤
         });
 
-        this.blueMarkerLayer = null;
-        this.clickedPoints = [];
-        this.onClick(this.handleMapClick.bind(this));
+
+
+        // Overlay를 지도에 추가
+        this.map.addOverlay(this.customOverlay);
+
+        this.map.on('postrender', () => {
+            const mapSize = this.map.getSize(); // 맵의 현재 크기를 가져옵니다.
+
+            // 오버레이의 크기와 위치를 조정합니다.
+            this.customOverlayElement.style.width = '120px'; // 고정된 너비
+            this.customOverlayElement.style.height = '40px'; // 맵의 높이와 동일한 높이
+
+            // 맵의 현재 범위에서 왼쪽 상단의 좌표를 가져옵니다.
+            const extent = this.map.getView().calculateExtent(this.map.getSize());
+            const leftTopCoordinate = [extent[0] + 5, extent[3]- 100];
+
+            // 오버레이 위치를 왼쪽 상단 좌표로 설정합니다.
+            this.customOverlay.setPosition(leftTopCoordinate);
+
+        });
+
     }
+
 
     handleMapClick(event) {
         const coordinate = event.coordinate;
@@ -303,7 +328,7 @@ function LayerNoCall(ChkName, mapObject) {
 
 
 // 클래스 인스턴스 생성
-const mapManager = new MapManager();
+const mapManager = new MapManager("map");
 const util = new UtilFunctions(mapManager.map); // MapManager 인스턴스의 map을 전달하여 UtilFunctions 인스턴스 생성
 
 
@@ -351,12 +376,97 @@ function createMeasureTooltip() {
 }
 
 
-function addOverlay(overlayElement, offset, positioning) {
-    const overlay = new ol.Overlay({
-        element: overlayElement,
-        offset: offset,
-        positioning: positioning
+
+function getFileAndPlotPoints() {
+    const fileInput = document.getElementById('fileInput');
+
+    // 사용자가 선택한 파일을 가져옵니다.
+    const selectedFile = fileInput.files[0];
+
+    // FileReader 객체를 생성하여 파일을 읽습니다.
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const fileContent = event.target.result;
+
+        // CSV 파일 내용 처리 함수 호출
+        plotPointsFromCSV(fileContent);
+    };
+
+    // 파일을 텍스트로 읽기 시작합니다.
+    reader.readAsText(selectedFile);
+}
+
+function plotPointsFromCSV(fileContent) {
+    // 파일 내용을 줄별로 분리합니다.
+    const lines = fileContent.split('\n');
+
+    const columnNames = parseCSVLine(lines[0]);
+    // 위도와 경도의 열 인덱스를 찾습니다.
+    const latIndex = columnNames.indexOf('위도');
+    const lonIndex = columnNames.indexOf('경도');
+
+    // 위도와 경도 값을 추출하여 지도 위에 점으로 표시합니다.
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const lat = parseFloat(values[latIndex]);
+        const lon = parseFloat(values[lonIndex]);
+        console.log(lat,lon)
+
+        if (!isNaN(lat) && !isNaN(lon)) {
+            // 위도와 경도 값을 사용하여 지도 위에 점으로 표시합니다.
+            plotPointOnMap(lat, lon);
+        }
+    }
+}
+
+function plotPointOnMap(lat, lon) {
+    console.log("나는 실행중")
+    // 파란색 원 형태의 마커 생성
+    const blueMarker = new ol.Feature({
+        geometry: new ol.geom.Point([lon, lat]),
     });
 
-    this.map.addOverlay(overlay);
+    blueMarker.setStyle(
+        new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 7,
+                fill: new ol.style.Fill({ color: 'blue' }),
+                stroke: new ol.style.Stroke({ color: 'white', width: 2 }),
+            }),
+        })
+    );
+
+    // 파란색 원을 담을 벡터 레이어 생성
+    const blueMarkerSource = new ol.source.Vector({ features: [blueMarker] });
+
+    const blueMarkerLayer = new ol.layer.Vector({
+        source: blueMarkerSource,
+    });
+
+    // 벡터 레이어를 지도에 추가
+    mapManager.map.addLayer(blueMarkerLayer);
 }
+
+function parseCSVLine(line) {
+    const values = [];
+    let inQuotes = false;
+    let currentValue = '';
+
+    for (const char of line) {
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            values.push(currentValue);
+            currentValue = '';
+        } else {
+            currentValue += char;
+        }
+    }
+
+    values.push(currentValue); // 마지막 열 값 추가
+    return values;
+}
+
+
+
+

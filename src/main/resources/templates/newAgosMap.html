@@ -11,30 +11,71 @@
 
 <body>
 <div id="map" class="map"></div>
-<div id="popup" style="padding: 10px;background-color: white;"></div>
+<div id="customElement" class="custom-overlay">
+  <table class="custom-table">
+    <tr>
+      <th colspan="2">데이터 추출 설정</th>
+    </tr>
+
+      <td colspan="2">
+        <input type="file" id="fileInput">
+        <button  onclick="getFileAndPlotPoints()" class="custom-button">탐지데이터 가져오기</button>
+      </td>
+    </tr>
+    <tr>
+      <td>파일명</td>
+      <td><span id="fileName">빈 텍스트</span></td>
+    </tr>
+    <tr>
+      <td>도엽 선택</td>
+      <td>
+        <select>
+          <option value="sheet1">도엽 1</option>
+          <option value="sheet2">도엽 2</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>추출 상태</td>
+      <td><span id="putStat">추출 상태의미</span></td>
+    </tr>
+    <tr>
+      <td>
+      <button class="custom-button">데이터 추출</button></td>
+      <td><button class="custom-button">데이터 초기화</button>
+      </td>
+    </tr>
+
+    <tr>
+      <th colspan="2">데이터 표시 설정</th>
+    </tr>
+    <tr>
+      <td>포인트 표시</td>
+      <td>
+        <select>
+          <option value="sheet1">on</option>
+          <option value="sheet2">off</option>
+        </select>
+    </tr>
+    <tr>
+      <td>표시 데이터 선택</td>
+      <td>
+        <select>
+          <option value="sheet1">탐지 데이터</option>
+          <option value="sheet2">추출 데이터</option>
+        </select>
+    </tr>
+    <tr><th colspan="2">추출 데이터 내보내기</th></tr>
+    <tr><th colspan="1">- 선택 데이터 (평균,최소,최대) </th></tr>
+
+
+
+  </table>
+</div>
 
 <script th:src="@{/js/ol/dist/ol.js}"></script>
 <script th:src="@{/js/proj4.js}"></script>
-
-<!--<script th:src="@{/js/ol/geom}"></script>-->
 <script th:src="@{/js/msmsAgos.js}"></script>
-
-
-
-<button onclick="zoomToLevel(2)">Zoom 2</button>
-<button onclick="zoomToLevel(10)">Zoom 10</button>
-<button onclick="zoomToLevel(18)">Zoom 18</button>
-<button onclick="rotate(180)">각도 변경</button>
-<button onclick="rotate(0)">각도 초기화</button>
-<button onclick="console.log(util.codeByTime())">현재 시간 출력</button>
-
-<button onclick="endMe();"> 멈춰~</button>
-<button onclick="drawPolygon()">그리기 모드 다각형</button>
-<button onclick="drawLineString()">그리기 모드 라인</button>
-<button onclick="removeAllMarkers()">점 하나 지우기</button>
-<button onclick="moveToCenter()">센터로 이동</button>
-
-
 
 </body>
 </html>

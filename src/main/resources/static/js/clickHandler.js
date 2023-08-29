@@ -1,10 +1,14 @@
-import {calculateDistance, SetCenter} from "./mapModule";
+import {calculateDistance} from "./measurement.js";
+// 변수 초기화
+// blueMarkerLayer 변수 정의
+var blueMarkerLayer;
 
+var clickedPoints = [];
 export function searchLonLat(mapView) {
     mapView.on('click', function (e) {
         var coordinate = e.coordinate;
         console.log('클릭 좌표:', ol.proj.toLonLat(coordinate));
-        SetCenter(e);
+
         // 클릭한 점들을 배열에 추가
         clickedPoints.push(coordinate);
 

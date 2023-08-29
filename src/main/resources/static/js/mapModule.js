@@ -4,6 +4,9 @@ var sketch;
 var measureTooltipElement;
 var measureTooltip;
 let tooltipCoord;
+// 클릭한 점들을 저장할 배열
+var clickedPoints = [];
+var blueMarkerLayer;
 // 지도 생성 함수
 export function createMap(targetElement) {
     const map = new ol.Map({
@@ -104,7 +107,6 @@ export function Start_mapMeasurement(type) {
             var output;
             if (type === 'Polygon') {
                 output = formatArea(geom);
-
                 tooltipCoord = geom.getInteriorPoint().getCoordinates();
             } else if (type === 'LineString') {
                 output = formatLength(geom);
@@ -156,17 +158,21 @@ export function End_mapMeasurement() {
 }
 
 // 측정 툴팁 생성 함수
-function createMeasureTooltip() {
+function createMeasureTooltip(mapView) {
+    // 기존 툴팁 엘리먼트가 있다면 삭제
     if (measureTooltipElement) {
         measureTooltipElement.parentNode.removeChild(measureTooltipElement);
     }
+
     measureTooltipElement = document.createElement('div');
     measureTooltipElement.className = 'ol-tooltip ol-tooltip-measure';
+
     measureTooltip = new ol.Overlay({
         element: measureTooltipElement,
         offset: [0, -15],
         positioning: 'bottom-center',
     });
+
     mapView.addOverlay(measureTooltip);
 }
 
@@ -295,90 +301,6 @@ export function SetCenter(lonlat) {
     view.animate({ center: center });
 }
 
-function Draw_Features_All(options) {
-    var lonsCnt = options.lons.length; /* lon 개수 */
-    var latsCnt = options.lats.length; /* lat 개수 */
-    var innerColorCnt = options.innerColor.length; /* innerColor 개수 */
-    var rimColorCnt = options.rimColor.length; /* rimColor 개수 */
-    var FtDataCnt = options.FtData.length; /* FtData 개수 */
 
-    if (
-        lonsCnt == latsCnt &&
-        lonsCnt == innerColorCnt &&
-        lonsCnt == rimColorCnt &&
-        lonsCnt == FtDataCnt
-    ) {
-        var arr_FeaturesData = [];
-        var lyno = LayerNoCall(options.LyName); /* 레이어 이름체크 */
-        if (lyno > -1) {
-            var cnt = options.lons.length;
-            var featurething = [];
-            var FStyle;
-            var atlasManager = new ol.style.AtlasManager({ initialSize: 512 });
-
-            for (var i = 0; i < cnt; i++) {
-                FStyle = new ol.style.Style({
-                    image: new ol.style.Circle({
-                        fill: new ol.style.Fill({
-                            color: options.innerColor[i],
-                        }),
-                        stroke: new ol.style.Stroke({
-                            color: options.rimColor[i],
-                            width: options.Vector_Stroke || 1,
-                        }),
-                        opacity: 0.2,
-                        scale: 1,
-                        radius: options.Vector_Radius || 5,
-                        atlasManager: atlasManager,
-                    }),
-                });
-
-                featurething[i] = new ol.Feature({
-                    geometry: new ol.geom.Point(
-                        ol.proj.transform(
-                            [Number(options.lons[i]), Number(options.lats[i])],
-                            "EPSG:4326",
-                            "EPSG:5179"
-                        )
-                    ),
-                    ftinfo: options.FtData[i],
-                });
-
-                featurething[i].setStyle(FStyle);
-            }
-
-            if (options.cleanChk) {
-                /* 기존 데이터 지울지 체크 */
-                SystemLog("기존 데이터 삭제.");
-                FeaturesSource[lyno].clear(true); /*기존 Features 삭제*/
-            }
-            FeaturesSource[lyno].addFeatures(featurething); /*새 Features 표시*/
-        } else {
-            SystemLog(options.LyName + " 이름의 레이어가 없습니다."); /* 레이어이름 없음 */
-        }
-    } else {
-        /* 배열 개수가 맞지 않을때. */
-        SystemLog("데이터 개수가 맞지 않습니다.");
-        SystemLog("lonsCnt : " + lonsCnt + "개.");
-        SystemLog("latsCnt : " + latsCnt + "개.");
-        SystemLog("innerColorCnt : " + innerColorCnt + "개.");
-        SystemLog("rimColorCnt : " + rimColorCnt + "개.");
-        SystemLog("FtDataCnt : " + FtDataCnt + "개.");
-    }
-}
-
-var options = {
-    lons: [126.978, 127.003, 127.02],
-    lats: [37.566, 37.5, 37.51],
-    innerColor: ['#FF0000', '#00FF00', '#0000FF'],
-    rimColor: ['#FFFFFF', '#000000', '#FFFF00'],
-    FtData: ['Feature 1', 'Feature 2', 'Feature 3'],
-    LyName: 'MyLayer',
-    Vector_Stroke: 2,
-    Vector_Radius: 7,
-    cleanChk: true,
-};
-
-Draw_Features_All(options);
 
 

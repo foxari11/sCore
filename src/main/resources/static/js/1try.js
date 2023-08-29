@@ -1,3 +1,12 @@
+var OpenStreet_Map_Use_CHK = false; /* 오픈스트리트맵 사용 유무 */
+var extent = [-200000.0, -3015.4524155292, 3803015.45241553, 4000000.0];
+var projection;
+var OnView;
+var Def_Center;  /* 디폴트 중심좌표 */
+var CenterCrossViewChk = false;
+var OMDiv;/*OSM div */
+var BDiv;/*맵 베이스 div */
+var BSmallDiv;/* 스몰 맵 베이스 div */
 
 function Start_mapMeasurement(MesaType){
     MeasNowType = MesaType
@@ -209,6 +218,70 @@ function MapMove(){
     End_mapMeasurement();
 }
 
+function Draw_LineString_Center(LyName,polyCoord,rimColor,rimWidth,dash,cleanChk){
+    var lyno = LayerNoCall(LyName);
+    if(lyno > -1){
+        var vectorLayer;
+        var Loncnt = polyCoord.length;
+        var fStryle ,i ,j;
+        var coordList = [];
+        var polygonFeature = [];
+        for(i=0;i<Loncnt;i++){
+            for(j=0;j<polyCoord[i].lon.length;j++){coordList[j] =  ol.proj.transform([Number(polyCoord[i].lon[j]),Number(polyCoord[i].lat[j])], 'EPSG:4326', 'EPSG:5179');}
+            polygonFeature[i] = new ol.Feature({geometry:new ol.geom.LineString(coordList)});
+        }
+        fStryle = new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: rimColor
+                ,width:rimWidth
+                ,lineDash: dash
+            })
+        });
+        vectorLayer = map.getLayers().getArray();
+        vectorLayer[lyno+1].setStyle(fStryle);
+        if(cleanChk){ /* 지울지 체크*/
+            FeaturesSource[lyno].clear(true); /*기존 Features 삭제*/
+        }
+        FeaturesSource[lyno].addFeatures(polygonFeature); /*새 Features 표시*/
+    }
+}
+
+
+function Center_Viewer(){
+
+    if(CenterCrossViewChk){
+        var center = ol.proj.transform(OnView.getCenter(), 'EPSG:5179', 'EPSG:4326'); /* 베이스맵 중심좌표 찾기 */
+        var extent = map.getView().calculateExtent(map.getSize());
+        var bottomLeft = ol.proj.transform(ol.extent.getBottomLeft(extent),'EPSG:5179', 'EPSG:4326');
+        var topRight = ol.proj.transform(ol.extent.getTopRight(extent),'EPSG:5179', 'EPSG:4326');
+
+        var polyCoord = [
+            {
+                lon:[bottomLeft[0],topRight[0]]
+                ,lat:[center[1],center[1]]
+            }
+            ,{
+                lon:[center[0],center[0]]
+                ,lat:[bottomLeft[1],topRight[1]]
+            }
+        ];
+        var rimColor = [255,255,255,1]; // 테두리색 rgba 타입은 배열로 표시 그냥 일반 컬러를 넣으면 투명도 조절이 안된다.
+        var rimWidth = 1 ; // 테두리, 선 두께
+        var dash =[2,2] ;
+        // Draw_LineString_Center("CenterViewerLayer2",polyCoord,rimColor,rimWidth,dash,T);
+        Draw_LineString_Center("Ref_POINT",polyCoord,rimColor,rimWidth,dash,T);
+        rimColor = [0,0,0,1];
+        dash =[1,0] ;
+        // Draw_LineString_Center("CenterViewerLayer",polyCoord,rimColor,rimWidth,dash,T);
+        Draw_LineString_Center("Ref_POINT",polyCoord,rimColor,rimWidth,dash,T);
+
+    }else{
+        removeElement("CenterViewerLayer");
+        removeElement("CenterViewerLayer2");
+    }
+}
+
+
 
 // 두 점 사이의 거리 계산 함수
 function calculateDistance(point1, point2) {
@@ -230,27 +303,12 @@ function calculateDistance(point1, point2) {
     return distance;
 }
 
-
 // 각도를 라디안으로 변환하는 함수
 function deg2rad(deg) {
     return deg * (Math.PI / 180);
 }
 
-// 지도 생성
-var map = new ol.Map({
-    target: 'map',
-    layers: [
-        new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                url: 'https://xdworld.vworld.kr/2d/midnight/service/{z}/{x}/{y}.png'
-            })
-        })
-    ],
-    view: new ol.View({
-        center: ol.proj.fromLonLat([126.978275264, 37.566642192]),
-        zoom: 7
-    })
-});
+
 
 var geojsonObject = {
     "type": "FeatureCollection",
@@ -311,9 +369,6 @@ var vectorLayer = new ol.layer.Vector({
     name: 'area'
 });
 
-// 행정구역 레이어 추가
-map.addLayer(vectorLayer);
-
 // 각 행정구역 마우스 오버시 하이라이팅
 // 마우스 오버시 스타일 지정
 var selectPointerMove = new ol.interaction.Select({
@@ -329,66 +384,7 @@ var selectPointerMove = new ol.interaction.Select({
     })
 });
 
-// interaction 추가
-map.addInteraction(selectPointerMove);
 
-// 마우스 오버 이벤트 처리
-map.on('pointermove', function (e) {
-    if (e.dragging) return;
-    var coordinate = e.coordinate;
-    console.log('마우스 좌표:', ol.proj.toLonLat(coordinate));
-});
-
-// 변수 초기화
-var clickedPoints = [];
-
-// 마우스 클릭 이벤트 처리 (점 찍기)
-// 마우스 클릭 이벤트 처리 (점 찍기)
-map.on('click', function (e) {
-    var coordinate = e.coordinate;
-    console.log('클릭 좌표:', ol.proj.toLonLat(coordinate));
-
-    // 클릭한 위치에 점 표시
-    var markerFeature = new ol.Feature({
-        geometry: new ol.geom.Point(coordinate)
-    });
-    var markerSource = new ol.source.Vector({
-        features: [markerFeature],
-        wrapX: false
-    });
-    blueMarkerLayer = new ol.layer.Vector({
-        source: markerSource,
-        style: new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: 6,
-                fill: new ol.style.Fill({
-                    color: 'blue'
-                }),
-                stroke: new ol.style.Stroke({
-                    color: 'white',
-                    width: 2
-                })
-            })
-        })
-    });
-    map.addLayer(blueMarkerLayer);
-
-    // 클릭한 점들을 배열에 추가
-    clickedPoints.push(coordinate);
-
-    // 두 점이 모두 클릭되면 거리를 계산하여 출력
-    if (clickedPoints.length === 2) {
-        var point1 = ol.proj.toLonLat(clickedPoints[0]);
-        var point2 = ol.proj.toLonLat(clickedPoints[1]);
-
-        var distance = calculateDistance(point1, point2);
-        console.log('두 점 사이의 거리:', distance.toFixed(2), 'km');
-
-        // 클릭한 점 배열 초기화
-        clickedPoints = [];
-
-    }
-});
 
 // 파란색 점 레이어를 저장할 전역 변수
 var blueMarkerLayer;
@@ -411,7 +407,7 @@ function RemoveAllBlueMarkers() {
 }
 
 function SetCenter(lon,lat){
-    map.getView().setCenter(_4326ToMapProj(lon,lat,'EPSG:5179'));/*console.log(lon+" , "+lat+" 으로 좌표이동");*/
+    map.getView().setCenter(_4326ToMapProj(lon,lat,'EPSG:5179')); /*console.log(lon+" , "+lat+" 으로 좌표이동");*/
 }
 
 function LayerInfo(ChkName, mapObject) {
@@ -528,5 +524,331 @@ function removeElement(LyName){
         }
     }
 }
+
+function init(tiles,startlon,startlat){
+
+    // if(!initStart){return false;} /*init 함수는 한번만 여러번 실행되는것 방지 재실행이 필요할 경우 initStart = true 할것*/
+    initStart = false;
+    if(tiles !=""){
+        TileUrl=tiles;
+    }else{
+        TileUrl = 'D:\\MAP\\EMAP';
+    }
+
+    Start_lon = startlon; // 시작 lon
+    Start_lat = startlat; // 시작 lat
+
+
+    /* 사용하는 맵체크*/
+    /*if($("#"+BDiv).length){$("#"+BDiv).css("z-index","9999995");}else{SystemLog("ID "+BDiv+"인 div를 찾을수 없어 지도 시작을 정지합니다.");return false;}
+    if($("#"+BSmallDiv).length){$("#"+BSmallDiv).css("z-index","9999994");}else{SystemLog("ID "+BSmallDiv+"인 div를 찾을수 없어 지도 시작을 정지합니다.");return false;}
+    if($("#"+OMDiv).length){$("#"+OMDiv).css("z-index","9999993");}else{OpenStreet_Map_Use_CHK=F;SystemLog("ID "+OMDiv+"인 div를 찾을수 없어 OSM을 사용 할수 없습니다.");} /!*OSM div 체크*!/
+*/
+    //if(!OpenStreet_Map_Use_CHK){SystemLog("사용할 지도가 없습니다.지도 사용 체크를 확인해 주세요");return false;}
+    /*맵 레이어 생성 끝*/
+    BASEMAP_CREAT();/*베이스맵 생성*/
+
+    if(OpenStreet_Map_Use_CHK){OpenStreetMapCreat(TileUrl);}/*오픈스트리트맵 생성*/
+    SetCenter(Start_lon,Start_lat);
+    Zoom(Start_Zoom);
+    Obj_Layer_Creat();
+    SetMapChange(DefaultMap);/*맵 변경*/
+    //DeveloperStart();/* 개발자용 시작 설정 */
+
+
+
+    $(".folding-btn").hide()
+    console.log('initialized');
+}
+function layerMatching(){/* 베이스맵과 사용중인 지도를 매칭한다. */
+    var now_center = new ol.proj.transform(map.getView().getCenter(), 'EPSG:5179', "EPSG:4326"); /* 현재 중심좌표 */
+    SetCenter(now_center[0],now_center[1]); /* 현재 중심으로 다시 중심설정 */
+    Zoom(map.getView().getZoom()); /* 현재줌으로 다시 줌 설정 */
+}
+
+function SetMapChange(mapCode){/* 맵 변경 불필요한 지도를 display none 시키고 필요한 지도를 display 시키고 지도 리셋함 */
+    if(OpenStreet_Map_Use_CHK){$("#"+OMDiv).css("display","none");}
+    /* OSM */		if(OSM==mapCode&&OpenStreet_Map_Use_CHK){$("#"+OMDiv).css("display","");Omap.updateSize();}
+    layerMatching();
+}
+
+function OpenStreetMapCreat(tiles){/*OSM 생성 : 맵생성 옵션은 OSM 홈페이지 참조 */
+    /* OSM은 API자체는 지원하지 않기 때문에 ol3을 한개 더만들어 지도를 생성한다 */
+    proj4.defs("EPSG:5179", '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs');	// 네이버맵 좌표계
+
+    localTileGrid =  new ol.tilegrid.TileGrid({
+        extent: extent,
+        resolutions: resolutions
+    });
+
+    LocalView = new ol.View({
+        projection: "EPSG:5179"
+        ,extent: extent
+        ,maxResolution: 2088.96
+        ,maxZoom: 12
+        ,center: ol.proj.transform([127, 37.5], "EPSG:4326", "EPSG:5179")
+    });
+
+    LocalSource = new ol.layer.Tile({
+        title : "Emap",
+        visible : true,
+        type : "base",
+        source : new ol.source.XYZ({
+            projection: new ol.proj.Projection({
+                code: 'EPSG:5179',
+                extent: extent,
+                units: 'm'
+            }),
+            tileGrid: new ol.tilegrid.TileGrid({
+                extent: extent,
+                origin: [extent[0], extent[3]],
+                resolutions: resolutions
+            }),
+            tileUrlFunction: function(tileCoord) {
+                var z = tileCoord[0]+5;
+                var x = tileCoord[1].toString();
+                var y = -tileCoord[2]-1;
+
+                return tiles + '/' + z + '/' + x + '/' + y + '.png';
+            },
+        })
+    });
+
+    //var LocalSource_Line = new ol.layer.Tile({
+    //	source: new ol.source.TileDebug({
+    //		projection: "EPSG:5179",
+    //		tileGrid: localTileGrid
+    //	})
+    //});
+
+    LocalLayer = new ol.layer.Group({name:"LocalLayer",layers:[LocalSource]});
+
+    /**************************************************************/
+    //내 위치 찾기 버튼 등록
+    var rotateButton = document.createElement('button');
+    rotateButton.innerHTML = '🕀';
+
+    rotateButton.addEventListener('click', handleRotateNorth, false);
+
+    var element = document.createElement('div');
+    element.className = 'rotate-north ol-unselectable ol-control';
+    element.appendChild(rotateButton);
+
+    var RotateNorthControl = new ol.control.Control({
+        element: element
+    });
+
+
+    var foldingButton = document.createElement("button");
+    foldingButton.innerHTML = "접기";
+
+    var foldingButtonElement = document.createElement("div");
+    foldingButtonElement.className = 'folding-btn ol-unselectable ol-control'
+    foldingButtonElement.appendChild(foldingButton);
+
+    var foldingButtonControl = new ol.control.Control({
+        element : foldingButtonElement
+    })
+
+    /**************************************************************/
+
+    Omap = new ol.Map({ /* 베이스맵 생성 */
+        layers : [LocalLayer] /* 오브젝트 레이어 */
+        ,target : OMDiv /* 사용할 div */
+        ,view: LocalView /* 지도 매칭용 뷰 */
+    });
+    map.addControl(new ol.control.ZoomSlider());
+    Omap.addControl(RotateNorthControl)
+    Omap.addControl(foldingButtonControl);
+}
+
+
+
+function Obj_Layer_Creat(){
+    for(i=0;i<Vector_Layer_Lists.length;i++){
+        VectorLayerCreat(Vector_Layer_Lists[i]);
+    }
+    for(i=0;i<Vector_Label_Layer_Lists.length;i++){
+        VectorLabelLayerCreat(Vector_Label_Layer_Lists[i]);
+    }
+    for(i=0;i<Heatmap_Layer_Lists.length;i++){
+        HeatmapLayerCreat(Heatmap_Layer_Lists[i].layerName
+            ,Heatmap_Layer_Lists[i].gradient
+            ,Heatmap_Layer_Lists[i].radius
+            ,Heatmap_Layer_Lists[i].blur);
+    }
+    for(i=0;i<Cluster_Layer_Lists.length;i++){
+        ClusterLayerCreat(Cluster_Layer_Lists[i]);
+    }
+}
+
+function _4326ToMapProj(x,y,proj){return new ol.proj.transform([Number(x), Number(y)],  'EPSG:4326', proj);}/* 좌표 변경 */
+
+
+function BASEMAP_CREAT(){/* 베이스맵 생성 맵이라기 보단 오브젝트 레이어가 맞음*/
+    Def_Center = _4326ToMapProj(Start_lon,Start_lat,'EPSG:5179'); /* 시작 센터값 변수이름 수정할것. cen쓰지말고*/
+
+    projection = new ol.proj.Projection({
+        code: 'EPSG:5179',
+        extent: extent,
+        units: 'm'
+    });
+
+    OnView = new ol.View({ /* 다른 맵을 매칭 시킬 뷰를 생성 (ol3 에서 생긴 기능 view)*/
+        center : Def_Center /* 시작 센터값*/
+        ,projection: projection
+        ,extent: extent
+        //,maxResolution: 1954.597389
+        ,maxResolution: 2088.96
+        ,maxZoom: 12
+    });
+
+    OnBigView = new ol.View({ /* 다른 맵을 매칭 시킬 뷰를 생성 (ol3 에서 생긴 기능 view)*/
+        center : Def_Center /* 시작 센터값*/
+        ,projection: projection
+        ,extent: extent
+        ,maxResolution: 2088.96
+        ,maxZoom: 12
+    });
+
+    OnView.on('change:center', function() { /* 중심좌표 변화가 일어날때 현재 좌표를 사용중인 지도의 중심 좌표와 베이스맵 중심좌표를 매칭 시킴*/
+        let center = ol.proj.transform(OnView.getCenter(), 'EPSG:5179', 'EPSG:4326'); /* 베이스맵 중심좌표 찾기 */
+        let z = Math.round(OnView.getZoom()); /* 베이스맵 줌 찾기 */
+        if(OpenStreet_Map_Use_CHK){Omap.getView().setCenter(OnView.getCenter());} /* OSM 좌표매칭 */
+        OnBigView.setZoom(OnView.getZoom());
+        OnBigView.setCenter(OnView.getCenter());
+        Center_Viewer();
+    });
+    OnView.on('change:resolution', function() { /* 해상도 그러니까 줌값이 변할때 이벤트 */
+        var z = Math.round(OnView.getZoom()); /* 베이스맵 줌 찾기 */
+        var center = ol.proj.transform(OnView.getCenter(), 'EPSG:5179', 'EPSG:4326'); /* 베이스맵 중심좌표 찾기 */
+        if(OpenStreet_Map_Use_CHK){Omap.getView().setZoom(z);/*console.log(z+",,zoomchange");*/} /* OSM맵 줌 매칭 */
+        OnBigView.setZoom(OnView.getZoom());
+        OnBigView.setCenter(OnView.getCenter());
+        Center_Viewer();
+        console.log(z+",,zoomchange");
+
+        console.log(" OnView : " + OnView.getResolution());
+        console.log(" Omap : " + LocalView.getResolution());
+    });
+
+    BaseLayer = new ol.layer.Group({name:"BaseLayer",layers:[new ol.layer.Tile({source: new ol.source.XYZ({projection: projection}),opacity:0}) ]}); /* 베이스 레이어생성 옵션 필요없음 */
+    SmallLayer = new ol.layer.Group({name:"SmallLayer",layers:[new ol.layer.Tile({source: new ol.source.XYZ({projection: projection}),opacity:0}) ]}); /* 베이스 레이어생성 옵션 필요없음 */
+
+    container = document.getElementById('popup'); /* openlayers3 지원 팝업컨트롤 변수 */
+    legend = document.getElementById('legend'); /* openlayers3 지원 팝업컨트롤 변수 */
+    content = document.getElementById('popup-content'); /* openlayers3 지원 팝업컨트롤 변수 */
+    closer = document.getElementById('popup-closer'); /* openlayers3 지원 팝업컨트롤 변수 */
+    legendPanel = document.getElementById('legend-panel'); /* openlayers3 지원 팝업컨트롤 변수 */
+
+    PopupOverLay = new ol.Overlay(/** @type {olx.OverlayOptions} */ ({ /* 팝업(말풍선) 레이어 생성 */
+        element: container
+        ,autoPan: true
+        ,autoPanAnimation: {
+            duration: 0 /* api지도들은 바로 이동하므로 0으로 해야 떨어져 나가는 느낌이 안생김 */
+        }
+    }));
+
+    closer.onclick = function() { /* 팝업(말풍선) 닫힘 버튼 생성 */
+        PopupOverLay.setPosition(undefined);
+        closer.blur();
+        return false;
+    };
+
+    dragpanInt = new ol.interaction.DragBox({
+        condition: ol.events.condition.altKeyOnly,
+        style: new ol.style.Style({
+            stroke: new ol.style.Stroke({color: [0, 0, 255, 1]})
+        })});/*드레그 박스 이벤트 생성*/
+
+
+    /**************************************************************/
+
+    //내 위치 찾기 버튼 등록
+    var button = document.createElement('button');
+    button.innerHTML = '🕀';
+
+    button.addEventListener('click', handleRotateNorth, false);
+
+    var element = document.createElement('div');
+    element.className = 'rotate-north ol-unselectable ol-control';
+    element.appendChild(button);
+
+    var RotateNorthControl = new ol.control.Control({
+        element: element
+    });
+
+    var foldingButton = document.createElement("button");
+    foldingButton.innerHTML = "접기";
+
+    foldingButton.addEventListener("click",initFoldingMode)
+
+    var foldingButtonElement = document.createElement("div");
+    foldingButtonElement.className = 'folding-btn ol-unselectable ol-control'
+    foldingButtonElement.appendChild(foldingButton);
+
+    var foldingButtonControl = new ol.control.Control({
+        element : foldingButtonElement
+    })
+
+    /**************************************************************/
+
+
+    map = new ol.Map({ /* 베이스맵 생성 */
+        layers : [BaseLayer] /* 오브젝트 레이어 */
+        ,target : BDiv /* 사용할 div */
+        ,interactions: [
+            new ol.interaction.DragPan({kinetic:new ol.Kinetic(-1,1,1)}) /* 지도 관성 끄기 */
+            ,new ol.interaction.MouseWheelZoom() /* 마우스 휠줌 켜기 */
+            ,dragpanInt
+        ]
+        ,view: OnView /* 지도 매칭용 뷰 */
+        ,overlays: [PopupOverLay] /* 팝업(말풍성)레이어 */
+        //,renderer:('webgl')
+    });
+
+    map.addControl(new ol.control.ZoomSlider());
+    map.addControl(RotateNorthControl);
+    map.addControl(foldingButtonControl);
+
+    SystemLog("베이스맵 생성.");
+    map.on("click", function(e) { /* 맵 포인트 클릭 이벤트 */
+        map.forEachFeatureAtPixel(e.pixel, function (feature, layer){
+            var LyType="None Data";
+            if(layer){
+                LyType = layer.get("Type"); /* 클릭한 포인트의 레이어 타입을 확인 */
+                SystemLog('ID :'+layer.get("name") +"(Type : "+LyType+") 레이어의 포인트를 클릭했습니다.");
+            }
+            if(LyType == CS){ /* cluster 포인트의 경우 배열로 값을 뽑기 때문에 해당 객체를 통째로 보냄 */
+                var features = feature.get('features'); /* 클릭한 객체데이터를 뽑음 */
+                Cluster_Feature_Click_Event(features,layer); /* 뽑아낸 객체를 전송 */
+            }else{
+                Feature_Click_Event(feature.get("ftinfo"),layer,e); /* 클릭한 포인트의 객체를 전송 */
+            }
+        })
+    });
+
+
+    map.on('singleclick',MapClickEvt); /* 지도 클릭이벤트 */
+    map.on('pointermove',MapMouseMoveEvt); /* 마우스 이동 이벤트 */
+    map.on('dblclick', MapDBClickEvt); /* 지도 더블클릭 이벤트 */
+    map.on('moveend', MapMoveEvt); /* 맵이동 이벤트*/
+
+    dragpanInt.on('boxend', MapDragEndEvt);
+    dragpanInt.on('boxstart', MapDragEvt);
+
+    //map.on('drag', MapDragEvt); /* 드래그 이벤트 */
+    //map.on('dragend', MapDragEndEvt); /* 드래그 완료 이벤트 */
+    dragpanInt.setActive(true);
+
+    Smallmap = new ol.Map({ /* 베이스맵 생성 */
+        layers : [SmallLayer] /* 오브젝트 레이어 */
+        ,target : BSmallDiv /* 사용할 div */
+        ,view: OnBigView /* 지도 매칭용 뷰 */
+    });
+
+}
+
+
 
 

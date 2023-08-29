@@ -88,3 +88,34 @@ form input {
     opacity: 1;
     white-space: nowrap;
 }
+
+.custom-overlay {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 12px;
+    z-index: 1000; /* Ensure the overlay is above the map */
+    top: 50px; /* 고정된 위치 */
+    left: 50px; /* 고정된 위치 */
+    transform: translate(-50%, -50%); /* 위치를 가운데로 조정 */
+}
+
+.custom-table {
+    width: 300px;
+    border-collapse: collapse;
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 5px;
+    border: 1px solid #ccc;
+}
+
+.custom-button {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}

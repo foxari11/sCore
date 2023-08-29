@@ -3,17 +3,31 @@ var sketch;
 var measureTooltipElement;
 var measureTooltip;
 let tooltipCoord;
+
+const polySource = new ol.source.Vector();
+const polyVector = new ol.layer.Vector({
+    source: polySource,
+});
+
+const lineSource = new ol.source.Vector();
+const lineVector = new ol.layer.Vector({
+    source: lineSource,
+});
+
+
+const pointSource = new ol.source.Vector();
+const pointVector = new ol.layer.Vector({ source: pointSource });
 // 측정 기능 시작
 export function startMapMeasurement(mapView, type) {
     var draw = new ol.interaction.Draw({
         source: type === 'Polygon' ? polySource : (type === 'LineString' ? lineSource : pointSource),
-        type: type,
+        type: type, // <-- Check the spelling here, it should be "LineString"
         style: new ol.style.Style({
             fill: new ol.style.Fill({
-                color: 'red', // 점의 색상을 빨간색으로 설정
+                color: 'red',
             }),
             stroke: new ol.style.Stroke({
-                color: 'red', // 점의 테두리 색상을 빨간색으로 설정
+                color: 'red',
                 width: 2,
             }),
             image: new ol.style.Circle({
@@ -23,7 +37,7 @@ export function startMapMeasurement(mapView, type) {
     });
 
     mapView.addInteraction(draw);
-    createMeasureTooltip();
+    createMeasureTooltip(mapView);
 
     var listener;
     draw.on('drawstart', function (evt) {
@@ -55,11 +69,10 @@ export function startMapMeasurement(mapView, type) {
         // 그리기 완료 후 초기화
         sketch = null;
         measureTooltipElement = null;
-        createMeasureTooltip();
+        createMeasureTooltip(mapView);
         ol.Observable.unByKey(listener);
     });
 }
-
 
 // 측정 기능 종료
 export function endMapMeasurement(mapView) {
@@ -85,28 +98,26 @@ export function endMapMeasurement(mapView) {
     });
 }
 
-
 // 측정 툴팁 생성 함수
-function createMeasureTooltip() {
+// 함수에서 var 대신 let을 사용하여 변수를 재선언하지 않도록 합니다.
+function createMeasureTooltip(mapView) {
     // 기존 툴팁 엘리먼트가 있다면 삭제
     if (measureTooltipElement) {
         measureTooltipElement.parentNode.removeChild(measureTooltipElement);
     }
 
-    // 새로운 툴팁 엘리먼트 생성
-    var measureTooltipElement = document.createElement('div');
+    measureTooltipElement = document.createElement('div');
     measureTooltipElement.className = 'ol-tooltip ol-tooltip-measure';
 
-    // 툴팁으로 사용할 오버레이 생성
-    var measureTooltip = new ol.Overlay({
+    measureTooltip = new ol.Overlay({
         element: measureTooltipElement,
         offset: [0, -15],
         positioning: 'bottom-center',
     });
 
-    // 지도에 툴팁 오버레이 추가
     mapView.addOverlay(measureTooltip);
 }
+
 
 
 // 면적 측정 함수
@@ -158,7 +169,6 @@ export function calculateDistance(point1, point2) {
 
     return distance;
 }
-
 
 // 각도를 라디안으로 변환하는 함수
 export function deg2rad(deg) {
